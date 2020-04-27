@@ -6,7 +6,7 @@ with open('README.rst') as file:
 
 name = 'aiodata'
 
-version = '2.0.0'
+version = '2.0.1'
 
 author = 'Exahilosys'
 
@@ -21,6 +21,9 @@ setuptools.setup(
     license = 'MIT',
     description = 'PostgREST proxy and client.',
     long_description = readme,
+    package_data = {
+        '': ['*.psql']
+    },
     install_requires = [
         'asyncpg',
         'aiohttp',
