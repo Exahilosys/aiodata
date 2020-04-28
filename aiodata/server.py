@@ -377,8 +377,7 @@ async def main(app, db_uri, pr_uri, sv_uri, **options):
     await runner.cleanup()
 
 
-
-def serve():
+def serve(env_prefix = 'AIODT_'):
 
     """
     Console functionality.
@@ -386,7 +385,15 @@ def serve():
 
     args = docopt.docopt(__doc__, argv = sys.argv[1:])
 
-    pr_uri = yarl.URL(args['--pr-uri'])
+    def geta(key):
+        try:
+            conkey = key.lstrip('-').replace('-', '_').upper()
+            return os.environ[env_prefix + conkey]
+        except KeyError:
+            pass
+        return args[key]
+
+    pr_uri = yarl.URL(geta('--pr-uri'))
 
     if (path := args['<file>']):
         config = configparser.ConfigParser()
@@ -395,30 +402,32 @@ def serve():
         file = io.StringIO(f'[_]\n{data}')
         config.readfp(file)
         config = config['_']
-        def get(key, default = None, /):
+        def getf(key, default = None, /):
             try:
                 value = config[key]
             except KeyError:
                 return default
             return value.strip('"')
-        db_uri = get('db-uri')
-        schema = get('db-schema')
-        secret = get('jwt-secret')
-        if (host := get('server-host', None)):
+        db_uri = getf('db-uri')
+        schema = getf('db-schema')
+        secret = getf('jwt-secret')
+        if (host := getf('server-host', None)):
             pr_uri = pr_uri.with_host(host)
-        if (port := get('server-port', None)):
+        if (port := getf('server-port', None)):
             pr_uri = pr_uri.with_port(port)
     else:
-        db_uri = args['--db-uri']
-        schema = args['--schema']
-        secret = args['--secret']
+        db_uri = geta('--db-uri')
+        schema = geta('--schema')
+        secret = geta('--secret')
 
-    sv_uri = args['--sv-uri']
-    query = args['--query']
-    state = args['--state']
+    sv_uri = geta('--sv-uri')
+    query = geta('--query')
+    state = geta('--state')
 
     loop = asyncio.get_event_loop()
     app = aiohttp.web.Application()
+
+    print(pr_uri)
 
     task = loop.create_task(
         main(
