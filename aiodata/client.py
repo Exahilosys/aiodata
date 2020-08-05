@@ -75,9 +75,10 @@ class Table:
             :header: "Attribute", "Type", "Description"
             :widths: auto
 
+            "``name``",":class:`str`","Its name."
             "``main``",":class:`bool`","Whether this is a primary key."
-            "``type``",":class:`str`","The PostgreSQL type name."
-            "``dims``",":class:`int`","The number of array dimensions."
+            "``type``",":class:`str`","PostgreSQL type name."
+            "``dims``",":class:`int`","Number of array dimensions."
             "``null``",":class:`bool`","Whether this is nullable."
             "``info``",":class:`str`","The attached databasae comment."
             "``refs``",":class:`tuple`\[:class:`str`]","The referenced table and field name or null for both."
@@ -113,6 +114,10 @@ class Table:
         """
 
         return self._cache.select(keys)
+
+    def __iter__(self):
+
+        yield from self._cache.entries()
 
     def create(self, *keys, **data):
 
@@ -234,6 +239,11 @@ class Client:
 
     :var ~vessel.Entry tables:
         Contains :class:`.Table`\s against their names.
+
+    .. note::
+        Tables without primary keys will be generated, but:
+        - Their cache won't be filled
+        - Events related to them won't be dispatched.
     """
 
     def __init__(self,
@@ -244,7 +254,8 @@ class Client:
                  callback = None):
 
         self._url = yarl.URL(url)
-        self._token = token
+        self._token = 'Bearer ' + token
+
         self._query = query
         self._state = state
 
@@ -280,27 +291,36 @@ class Client:
         return map(vessel.Entry, data)
 
     async def _describe(self):
-        tables = await self._request('GET')
+        while not self._session.closed:
+            try:
+                tables = await self._request('GET')
+            except aiohttp.ClientError:
+                await asyncio.sleep(1)
+            else:
+                break
         async def fill(name, cache):
             entries = await self._interact('GET', name)
             cache.create(None, entries)
         (result, tasks) = ({}, [])
         for (table, fields) in tables.items():
-            (primary, details) = ([], {})
+            (primary, general) = ([], [])
             for (field, info) in fields.items():
                 if info['main']:
                     primary.append(field)
-                details[field] = vessel.Entry(info)
+                info['name'] = field
+                general.append(vessel.Entry(info))
             cache = vessel.AlikeBulkRowCache(primary)
-            tasks.append(asyncio.create_task(fill(table, cache)))
-            entry = vessel.Entry(details)
-            result[table] = Table(table, self._interact, cache, entry)
+            if primary:
+                tasks.append(asyncio.create_task(fill(table, cache)))
+            result[table] = Table(table, self._interact, cache, general)
         await asyncio.gather(*tasks)
         self._tables = vessel.Entry(result)
 
     def _handle(self, method, name, query, data):
         (attr, action) = _ACTIONS[method]
-        cache = self._tables[name]._cache # really don't wanna expose
+        cache = self._tables[name]._cache
+        if not cache.primary: # nothing we can do
+            return
         execute = getattr(cache, attr)
         result = execute(query, data)
         self._callback(action, name, result)

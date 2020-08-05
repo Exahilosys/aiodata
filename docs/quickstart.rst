@@ -123,7 +123,7 @@ Use tools like :mod:`wrapio`\'s :class:`~.wrapio.Track` to manage events:
 
   def callback(action, table, entries):
     # name of the event
-    name = f'{action}_{table}'
+    name = f'{table}_{action}'
     # pass to our track
     return track.invoke(name, entries)
 
@@ -131,17 +131,17 @@ Use tools like :mod:`wrapio`\'s :class:`~.wrapio.Track` to manage events:
   client = aiodata.Client(callback = callback, token = token)
 
   @track.call
-  async def update_pets(entries):
+  async def pets_update(entries):
     for (old, new) in entries:
       # [...]
 
   @track.call
-  async def create_pets(entries):
+  async def pets_create(entries):
     for entry in entries:
       # [...]
 
   @track.call
-  async def delete_pets(entries):
+  async def pets_delete(entries):
     for entry in entries:
       # [...]
 

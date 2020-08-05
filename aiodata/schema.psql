@@ -1,7 +1,7 @@
 SELECT
   "c"."relname" AS "table",
   "a"."attname" AS "field",
-  "a"."attnum" = ANY("i"."indkey") AS "main",
+  COALESCE("a"."attnum" = ANY("i"."indkey"), FALSE) AS "main",
   "t"."typname" AS "type",
   "a"."attndims" AS "dims",
   NOT "a"."attnotnull" AS "null",
@@ -13,7 +13,7 @@ JOIN
   "pg_class" "c"
 ON
   "c"."relnamespace" = "n"."oid"
-JOIN
+LEFT JOIN
   "pg_index" "i"
 ON
   "c"."oid" = "i"."indrelid"
@@ -61,8 +61,12 @@ ON
   AND
   array_position("r"."conkey", "a"."attnum") = "r"."confpos"
 WHERE
+  "c"."relkind" = 'r'
+  AND
+  "c"."relpersistence" = 'p'
+  AND
   "a"."attnum" > 0
   AND
-  "n"."nspname" = '{0}'
+  "n"."nspname" = 'api'
   AND
   NOT "a"."attisdropped";

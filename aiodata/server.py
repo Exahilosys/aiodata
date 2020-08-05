@@ -148,6 +148,7 @@ class Server:
     def _auth(self, headers):
         token = headers.get('Authorization')
         if self._secret and token:
+            token = token.split(' ')[-1] # - Bearer
             claims = jwt.decode(token, self._secret)
             return claims['role']
         return _anon
@@ -230,8 +231,8 @@ class Server:
         await websocket.prepare(request)
         websockets.append(websocket)
         async for message in websocket:
-            pass # don't care
-        swebsockets.remove(websocket)
+            pass # receiving does nothing
+        websockets.remove(websocket)
 
         return websocket
 
@@ -414,7 +415,7 @@ def serve(env_prefix = 'AIODT_'):
         if (host := getf('server-host', None)):
             pr_uri = pr_uri.with_host(host)
         if (port := getf('server-port', None)):
-            pr_uri = pr_uri.with_port(port)
+            pr_uri = pr_uri.with_port(int(port))
     else:
         db_uri = geta('--db-uri')
         schema = geta('--schema')
@@ -426,8 +427,6 @@ def serve(env_prefix = 'AIODT_'):
 
     loop = asyncio.get_event_loop()
     app = aiohttp.web.Application()
-
-    print(pr_uri)
 
     task = loop.create_task(
         main(
