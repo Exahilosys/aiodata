@@ -227,12 +227,15 @@ class Server:
             raise aiohttp.web.HTTPUnauthorized(reason = 'Invalid token.')
         websockets = self._websockets[role]
 
-        websocket = aiohttp.web.WebSocketResponse()
+        websocket = aiohttp.web.WebSocketResponse(heartbeat = 30)
         await websocket.prepare(request)
+        
         websockets.append(websocket)
-        async for message in websocket:
-            pass # receiving does nothing
-        websockets.remove(websocket)
+        try:
+            async for message in websocket:
+                pass # receiving does nothing
+        finally:
+            websockets.remove(websocket)
 
         return websocket
 
