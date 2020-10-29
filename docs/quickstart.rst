@@ -6,7 +6,7 @@ Jump `here`_ if you know how to make a PostREST database.
 Setup
 -----
 
-Create roles and tables (`guide <http://postgrest.org/en/v6.0/tutorials/tut0.html>`_):
+Create roles and tables (`guide <http://postgrest.org/en/latest/tutorials/tut0.html>`__):
 
 .. code-block:: postgresql
 
@@ -32,7 +32,7 @@ Create roles and tables (`guide <http://postgrest.org/en/v6.0/tutorials/tut0.htm
   GRANT ALL    ON api.pets TO auth; -- having token means we can do anything
 
 
-Make a ``postgrest.conf`` file (`guide <http://postgrest.org/en/v6.0/configuration.html>`_):
+Make a ``postgrest.conf`` file (`guide <http://postgrest.org/en/latest/configuration.html>`__):
 
 .. code-block::
 
