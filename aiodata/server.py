@@ -4,15 +4,16 @@ Launch a proxy for tranforming `/paths/like/these` to PostgREST filters.
 
 Usage:
     aiodata -h | --help
-    aiodata <file> [--sv-uri=<uri>] [--secret=<str>] [--query=<str>]
-    aiodata [--db-uri=<uri>] [--pr-uri=<uri>] [--sv-uri=<uri>] [--schema=<str>] [--secret=<str>] [--query=<str>] [--state=<str>]
+    aiodata <file> [--host=<str>] [--port=<int>] [--query=<str>] [--state=<str>]
+    aiodata [--db-uri=<uri>] [--pr-uri=<uri>] [--host=<str>] [--port=<int>] [--schema=<str>] [--secret=<str>] [--query=<str>] [--state=<str>]
 
 Options:
     -h --help           Show this screen.
     file                Path to the `.conf` file for PostgREST.
     --db-uri=<uri>      Uri to the PostgreSQL database.                         [default: postgres://admin@localhost/postgres]
     --pr-uri=<uri>      Uri to the PostgREST server.                            [default: http://localhost:3000]
-    --sv-uri=<uri>      Uri to launch the proxy at.                             [default: http://localhost:4000]
+    --host=<str>        Host to launch the proxy at.                            [default: localhost]
+    --port=<int>        Port to launch the proxy at.                            [default: 4000]
     --schema=<str>      The exposed schema to describe.                         [default: api]
     --secret=<str>      Authenticates websocket tokens (claims dont matter).
     --query=<str>       Routing path to expose queries at.                      [default: /query]
@@ -229,7 +230,7 @@ class Server:
 
         websocket = aiohttp.web.WebSocketResponse(heartbeat = 30)
         await websocket.prepare(request)
-        
+
         websockets.append(websocket)
         try:
             async for message in websocket:
@@ -329,7 +330,7 @@ async def make(pool,
     return (routes, server)
 
 
-async def main(app, db_uri, pr_uri, sv_uri, **options):
+async def main(app, db_uri, pr_uri, host, port, **options):
 
     """
     Start the proxy.
@@ -338,8 +339,10 @@ async def main(app, db_uri, pr_uri, sv_uri, **options):
         URL for the PostgreSQL database.
     :param str pr_uri:
         URL for the PostgREST server.
-    :param str sv_uri:
-        URL to launch the proxy at.
+    :param str host:
+        Host to launch the proxy at.
+    :param int port:
+        Port to launch the proxy at.
     :param str schema:
         The exposed schema.
     :param str secret:
@@ -365,10 +368,9 @@ async def main(app, db_uri, pr_uri, sv_uri, **options):
 
     await server.start()
 
-    sv_uri = yarl.URL(sv_uri)
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
-    site = aiohttp.web.TCPSite(runner, sv_uri.host, sv_uri.port)
+    site = aiohttp.web.TCPSite(runner, host, port)
     await site.start()
 
     try:
@@ -403,9 +405,10 @@ def serve(env_prefix = 'AIODT_'):
         config = configparser.ConfigParser()
         with open(path) as file:
             data = file.read()
-        file = io.StringIO(f'[_]\n{data}')
-        config.readfp(file)
-        config = config['_']
+        head = '_'
+        data = f'[{head}]\n{data}'
+        config.read_string(data)
+        config = config[head]
         def getf(key, default = None, /):
             try:
                 value = config[key]
@@ -424,7 +427,10 @@ def serve(env_prefix = 'AIODT_'):
         schema = geta('--schema')
         secret = geta('--secret')
 
-    sv_uri = geta('--sv-uri')
+    host = geta('--host')
+    port = geta('--port')
+    port = int(port)
+
     query = geta('--query')
     state = geta('--state')
 
@@ -433,7 +439,7 @@ def serve(env_prefix = 'AIODT_'):
 
     task = loop.create_task(
         main(
-            app, db_uri, pr_uri, sv_uri,
+            app, db_uri, pr_uri, host, port,
             schema = schema, secret = secret,
             query = query, state = state
         )
