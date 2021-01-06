@@ -11,3 +11,7 @@ Links
 -----
 
 - `Documentation <https://aiodata.readthedocs.io>`_
+
+.. warning::
+
+  Versions bellow ``3.0.0`` are not guaranteed to work due to dependency changes.

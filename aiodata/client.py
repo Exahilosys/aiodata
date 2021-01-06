@@ -1,7 +1,7 @@
 import asyncio
 import aiohttp
 import yarl
-import vessel
+import ldbcache
 import json
 import collections
 
@@ -68,7 +68,7 @@ class Table:
 
     :var str name:
         The table's name.
-    :var ~vessel.Entry fields:
+    :var ~ldbcache.Entry fields:
         Contains fields against their names with the following details:
 
         .. csv-table::
@@ -187,7 +187,7 @@ class Error(Exception):
     """
     Raised when something goes wrong.
 
-    :var ~vessel.Entry info:
+    :var ~ldbcache.Entry info:
         Contains all details sent by the server.
     """
 
@@ -195,7 +195,7 @@ class Error(Exception):
 
     def __init__(self, data):
         super().__init__(json.dumps(data, indent = 2))
-        self._indo = vessel.Entry(data)
+        self._indo = ldbcache.Entry(data)
 
     @property
     def info(self):
@@ -237,7 +237,7 @@ class Client:
             "``1``",":class:`str`","Table name."
             "``2``",":class:`tuple`\[:class:`Entry`]","Single entries or ``(old, new)`` pairs (``update`` only)."
 
-    :var ~vessel.Entry tables:
+    :var ~ldbcache.Entry tables:
         Contains :class:`.Table`\s against their names.
 
     .. note::
@@ -288,7 +288,7 @@ class Client:
         if keys:
             path = f'{path}/' + '/'.join(map(str, keys))
         data = await self._request(method, path, json = data)
-        return map(vessel.Entry, data)
+        return map(ldbcache.Entry, data)
 
     async def _describe(self):
         while not self._session.closed:
@@ -308,13 +308,13 @@ class Client:
                 if info['main']:
                     primary.append(field)
                 info['name'] = field
-                general.append(vessel.Entry(info))
-            cache = vessel.AlikeBulkRowCache(primary)
+                general.append(ldbcache.Entry(info))
+            cache = ldbcache.AlikeBulkRowCache(primary)
             if primary:
                 tasks.append(asyncio.create_task(fill(table, cache)))
             result[table] = Table(table, self._interact, cache, general)
         await asyncio.gather(*tasks)
-        self._tables = vessel.Entry(result)
+        self._tables = ldbcache.Entry(result)
 
     def _handle(self, method, name, query, data):
         (attr, action) = _ACTIONS[method]

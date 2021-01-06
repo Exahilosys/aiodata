@@ -6,7 +6,7 @@ with open('README.rst') as file:
 
 name = 'aiodata'
 
-version = '2.2.0'
+version = '3.0.0'
 
 author = 'Exahilosys'
 
@@ -25,13 +25,13 @@ setuptools.setup(
         '': ['*.psql']
     },
     install_requires = [
-        'asyncpg',
-        'aiohttp',
-        'yarl',
-        'aiofiles',
-        'pyjwt',
-        'docopt',
-        'vessel'
+        'asyncpg<1.0',
+        'aiohttp<4.0',
+        'yarl<2.0',
+        'aiofiles<1.0',
+        'pyjwt<3.0',
+        'docopt<1.0',
+        'ldbcache<1.0'
     ],
     entry_points = {
         'console_scripts': [

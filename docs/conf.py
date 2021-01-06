@@ -81,7 +81,6 @@ autodoc_inherit_docstrings = False
 # intersphinx
 intersphinx_mapping = {
   'py': ('https://docs.python.org/3', None),
-  'vessel': ('https://vessel.readthedocs.io/en/latest/', None),
   'wrapio': ('https://wrapio.readthedocs.io/en/latest/', None)
 }
 
