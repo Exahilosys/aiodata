@@ -336,8 +336,8 @@ class Client:
 
     async def _setup(self):
         headers = {}
-        if (token := self._token):
-            headers['Authorization'] = token
+        if self._token:
+            headers['Authorization'] = self._token
         self._session = aiohttp.ClientSession(headers = headers)
 
     async def start(self):

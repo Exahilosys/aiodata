@@ -401,7 +401,9 @@ def serve(env_prefix = 'AIODT_'):
 
     pr_uri = yarl.URL(geta('--pr-uri'))
 
-    if (path := args['<file>']):
+    path = args['<file>']
+
+    if path:
         config = configparser.ConfigParser()
         with open(path) as file:
             data = file.read()
@@ -409,7 +411,7 @@ def serve(env_prefix = 'AIODT_'):
         data = f'[{head}]\n{data}'
         config.read_string(data)
         config = config[head]
-        def getf(key, default = None, /):
+        def getf(key, default = None):
             try:
                 value = config[key]
             except KeyError:
@@ -418,9 +420,11 @@ def serve(env_prefix = 'AIODT_'):
         db_uri = getf('db-uri')
         schema = getf('db-schema')
         secret = getf('jwt-secret')
-        if (host := getf('server-host', None)):
+        host = getf('server-host', None)
+        if host:
             pr_uri = pr_uri.with_host(host)
-        if (port := getf('server-port', None)):
+        port = getf('server-port', None)
+        if port:
             pr_uri = pr_uri.with_port(int(port))
     else:
         db_uri = geta('--db-uri')
